@@ -4,15 +4,15 @@
 
 /* 截图按钮 */
 .tubesnap-btn {
-    width: 40px !important;
-    height: 40px !important;
-    padding: 8px !important;
-    margin: 0 4px !important;
+    width: 48px !important;
+    height: 48px !important;
+    padding: 10px !important;
+    margin: 0 6px !important;
     border: none !important;
-    background: transparent !important;
-    color: #eee !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: #fff !important;
     cursor: pointer !important;
-    opacity: 0.9 !important;
+    opacity: 0.85 !important;
     transition: all 0.2s ease !important;
     display: flex !important;
     align-items: center !important;
@@ -22,8 +22,8 @@
 
 .tubesnap-btn:hover {
     opacity: 1 !important;
-    background: rgba(255, 255, 255, 0.15) !important;
-    transform: scale(1.1) !important;
+    background: rgba(255, 255, 255, 0.2) !important;
+    transform: scale(1.05) !important;
 }
 
 .tubesnap-btn:active {
@@ -31,8 +31,8 @@
 }
 
 .tubesnap-btn svg {
-    width: 22px !important;
-    height: 22px !important;
+    width: 26px !important;
+    height: 26px !important;
     fill: currentColor !important;
     pointer-events: none !important;
 }
@@ -40,6 +40,11 @@
 /* 暗黑模式适配 */
 html[dark] .tubesnap-btn {
     color: #eee !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+
+html[dark] .tubesnap-btn:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
 }
 
 /* 闪光效果 */

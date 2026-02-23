@@ -193,70 +193,67 @@ function drawSimpleWatermark(ctx, canvas, timestamp, channel) {
     ctx.fillText(text, x, y);
 }
 
-// 外框水印（小米/vivo/OPPO 风格 - 精致版）
+// 外框水印（相框风格 - 类似小米徕卡/vivo蔡司）
 function drawFrameWatermark(ctx, canvas, videoTime, channel, videoWidth, videoHeight) {
-    const padding = Math.floor(canvas.width * 0.04);
-    const barHeight = Math.floor(canvas.width * 0.10);
-    const barY = canvas.height - barHeight - padding;
+    const frameSize = Math.floor(Math.min(canvas.width, canvas.height) * 0.08);
+    const bottomBarHeight = Math.floor(frameSize * 1.5);
     
-    // 白色半透明底部条带
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-    ctx.fillRect(padding, barY, canvas.width - padding * 2, barHeight);
+    // 创建新画布，带边框
+    const framedCanvas = document.createElement('canvas');
+    framedCanvas.width = canvas.width + frameSize * 2;
+    framedCanvas.height = canvas.height + frameSize + bottomBarHeight;
+    const fCtx = framedCanvas.getContext('2d');
     
-    // 左侧红色/品牌色竖条
-    const accentColor = '#ff3b30';
-    ctx.fillStyle = accentColor;
-    ctx.fillRect(padding, barY, 4, barHeight);
+    // 填充白色背景
+    fCtx.fillStyle = '#ffffff';
+    fCtx.fillRect(0, 0, framedCanvas.width, framedCanvas.height);
+    
+    // 绘制原图
+    fCtx.drawImage(canvas, frameSize, frameSize, canvas.width, canvas.height);
+    
+    // 底部信息栏
+    const barY = canvas.height + frameSize;
+    const barHeight = bottomBarHeight;
+    const padding = frameSize * 0.5;
     
     // 计算字体大小
-    const baseFontSize = Math.floor(barHeight * 0.22);
+    const baseFontSize = Math.floor(barHeight * 0.28);
     
-    // 左侧：品牌名 TubeSnap
-    ctx.font = `600 ${baseFontSize}px "Segoe UI", "SF Pro Display", -apple-system, sans-serif`;
-    ctx.fillStyle = '#1d1d1f';
-    ctx.textBaseline = 'middle';
-    const textY = barY + barHeight / 2;
-    ctx.fillText('TubeSnap', padding + 16, textY - baseFontSize * 0.3);
+    // 左侧：品牌 Logo 区域（模拟徕卡红点）
+    fCtx.fillStyle = '#ff3b30';
+    fCtx.beginPath();
+    fCtx.arc(padding + barHeight * 0.35, barY + barHeight / 2, barHeight * 0.12, 0, Math.PI * 2);
+    fCtx.fill();
     
-    // 品牌名下：日期时间
-    ctx.font = `400 ${Math.floor(baseFontSize * 0.75)}px "Segoe UI", sans-serif`;
-    ctx.fillStyle = '#86868b';
-    const dateTimeStr = `${getCurrentDateString()} ${getCurrentTimeString()}`;
-    ctx.fillText(dateTimeStr, padding + 16, textY + baseFontSize * 0.5);
+    // 品牌名
+    fCtx.font = `500 ${baseFontSize}px "SF Pro Display", -apple-system, "Segoe UI", sans-serif`;
+    fCtx.fillStyle = '#1d1d1f';
+    fCtx.textBaseline = 'middle';
+    fCtx.fillText('TubeSnap', padding + barHeight * 0.6, barY + barHeight / 2 - baseFontSize * 0.2);
     
-    // 右侧：视频信息
-    ctx.textAlign = 'right';
+    // 日期
+    fCtx.font = `300 ${Math.floor(baseFontSize * 0.75)}px "SF Pro Display", sans-serif`;
+    fCtx.fillStyle = '#86868b';
+    fCtx.fillText(getCurrentDateString(), padding + barHeight * 0.6, barY + barHeight / 2 + baseFontSize * 0.5);
     
-    // 分辨率
-    ctx.font = `500 ${baseFontSize}px "Segoe UI", sans-serif`;
-    ctx.fillStyle = '#1d1d1f';
-    ctx.fillText(`${videoWidth} × ${videoHeight}`, canvas.width - padding - 16, textY - baseFontSize * 0.2);
+    // 中间：视频参数
+    const centerX = framedCanvas.width / 2;
+    fCtx.font = `400 ${Math.floor(baseFontSize * 0.85)}px "SF Pro Display", sans-serif`;
+    fCtx.fillStyle = '#86868b';
+    fCtx.textAlign = 'center';
+    const paramsText = `${videoWidth} × ${videoHeight}`;
+    fCtx.fillText(paramsText, centerX, barY + barHeight / 2);
     
-    // 时长和频道
-    ctx.font = `400 ${Math.floor(baseFontSize * 0.75)}px "Segoe UI", sans-serif`;
-    ctx.fillStyle = '#86868b';
-    const infoText = channel ? `${channel} · ${videoTime}` : videoTime;
-    ctx.fillText(infoText, canvas.width - padding - 16, textY + baseFontSize * 0.6);
+    // 右侧：时间戳
+    fCtx.textAlign = 'right';
+    fCtx.font = `300 ${baseFontSize}px "SF Pro Display", sans-serif`;
+    fCtx.fillStyle = '#1d1d1f';
+    fCtx.fillText(getCurrentTimeString(), framedCanvas.width - padding, barY + barHeight / 2);
     
-    // 右下角小 Logo 图标区域（可选，增加品牌感）
-    const logoSize = Math.floor(barHeight * 0.35);
-    const logoX = canvas.width - padding - 80;
-    const logoY = barY + (barHeight - logoSize) / 2;
-    
-    // 绘制简单的相机图标作为品牌标识
-    ctx.strokeStyle = accentColor;
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.arc(logoX + logoSize/2, logoY + logoSize/2, logoSize/3, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(logoX + logoSize/2, logoY + logoSize/2, logoSize/6, 0, Math.PI * 2);
-    ctx.fillStyle = accentColor;
-    ctx.fill();
-    
-    // 重置文本对齐
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'alphabetic';
+    // 将带边框的画布绘制回原画布
+    ctx.canvas.width = framedCanvas.width;
+    ctx.canvas.height = framedCanvas.height;
+    ctx.drawImage(framedCanvas, 0, 0);
 }
 
 async function saveScreenshot(canvas, filename) {
