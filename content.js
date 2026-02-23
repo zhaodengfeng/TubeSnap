@@ -120,7 +120,12 @@ async function captureScreenshot() {
     
     if (CONFIG.enableWatermark) {
         if (CONFIG.watermarkStyle === 'frame') {
-            await drawFrameWatermark(ctx, canvas, timestamp, getChannelName(), video.videoWidth, video.videoHeight);
+            try {
+                await drawFrameWatermark(ctx, canvas, timestamp, getChannelName(), video.videoWidth, video.videoHeight);
+            } catch (err) {
+                console.error('外框水印失败，回退到简洁水印:', err);
+                drawSimpleWatermark(ctx, canvas, timestamp, getChannelName());
+            }
         } else {
             drawSimpleWatermark(ctx, canvas, timestamp, getChannelName());
         }
@@ -217,14 +222,19 @@ async function drawFrameWatermark(ctx, canvas, videoTime, channel, videoWidth, v
     const padding = frameSize * 1.2;
 
     // 左侧：绘制 Logo（使用高清原图）
-    const logoImg = await loadLogoImageHD();
     let logoDrawn = false;
     let logoX = padding;
     let logoSize = Math.floor(barHeight * 0.55);
-    if (logoImg) {
-        const logoY = barY + (barHeight - logoSize) / 2;
-        fCtx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
-        logoDrawn = true;
+    
+    try {
+        const logoImg = await loadLogoImageHD();
+        if (logoImg) {
+            const logoY = barY + (barHeight - logoSize) / 2;
+            fCtx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
+            logoDrawn = true;
+        }
+    } catch (e) {
+        console.log('Logo 加载失败:', e);
     }
 
     // 计算字体大小 - 使用更合理的大小
