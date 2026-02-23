@@ -350,11 +350,11 @@ function createScreenshotButton() {
     btn.title = '截图 (Alt+S)';
     btn.setAttribute('aria-label', '截图');
     
-    // 相机图标 SVG - 移除内联尺寸，让 CSS 控制
+    // 使用简单的相机图标 - 可靠的 SVG 路径
     btn.innerHTML = `
-        <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/>
-            <path d="M20 6h-2.5l-1.5-2h-7L7.5 6H5c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h15c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-8 13c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"/>
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="3" fill="currentColor"/>
+            <path fill="currentColor" d="M20 6h-2.5l-1.5-2h-7L7.5 6H5c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h15c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H5V8h15v10z"/>
         </svg>
     `;
     
