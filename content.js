@@ -195,8 +195,8 @@ function drawSimpleWatermark(ctx, canvas, timestamp, channel) {
 
 // 外框水印（相框风格 - 类似小米徕卡/vivo蔡司）
 async function drawFrameWatermark(ctx, canvas, videoTime, channel, videoWidth, videoHeight) {
-    const frameSize = Math.floor(Math.min(canvas.width, canvas.height) * 0.08);
-    const bottomBarHeight = Math.floor(frameSize * 1.8);
+    const frameSize = Math.floor(Math.min(canvas.width, canvas.height) * 0.06);
+    const bottomBarHeight = Math.floor(frameSize * 2.2);
     
     // 创建新画布，带边框
     const framedCanvas = document.createElement('canvas');
@@ -214,45 +214,50 @@ async function drawFrameWatermark(ctx, canvas, videoTime, channel, videoWidth, v
     // 底部信息栏
     const barY = canvas.height + frameSize;
     const barHeight = bottomBarHeight;
-    const padding = frameSize * 0.6;
+    const padding = frameSize;
     
-    // 加载并绘制 Logo
+    // 加载并绘制 Logo（更大更醒目）
     const logoImg = await loadLogoImage();
+    let logoDrawn = false;
     if (logoImg) {
-        const logoSize = Math.floor(barHeight * 0.5);
-        fCtx.drawImage(logoImg, padding, barY + (barHeight - logoSize) / 2, logoSize, logoSize);
+        const logoSize = Math.floor(barHeight * 0.7);
+        const logoX = padding + frameSize * 0.5;
+        const logoY = barY + (barHeight - logoSize) / 2;
+        fCtx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
+        logoDrawn = true;
     }
     
     // 计算字体大小
-    const baseFontSize = Math.floor(barHeight * 0.22);
+    const brandFontSize = Math.floor(barHeight * 0.28);
+    const infoFontSize = Math.floor(barHeight * 0.18);
     
-    // Logo 右侧：品牌名和日期
-    const textStartX = padding + (logoImg ? barHeight * 0.6 : 0);
+    // Logo 右侧：品牌信息区域
+    const textStartX = padding + (logoDrawn ? barHeight * 0.9 : 0);
+    const centerTextY = barY + barHeight / 2;
     
-    // 品牌名
-    fCtx.font = `500 ${baseFontSize}px "SF Pro Display", -apple-system, "Segoe UI", sans-serif`;
+    // 品牌名（TubeSnap）
+    fCtx.font = `600 ${brandFontSize}px -apple-system, "SF Pro Display", "Segoe UI", sans-serif`;
     fCtx.fillStyle = '#1d1d1f';
-    fCtx.textBaseline = 'middle';
-    fCtx.fillText('TubeSnap', textStartX, barY + barHeight / 2 - baseFontSize * 0.2);
+    fCtx.textBaseline = 'alphabetic';
+    fCtx.fillText('TubeSnap', textStartX, centerTextY - brandFontSize * 0.1);
     
-    // 日期
-    fCtx.font = `300 ${Math.floor(baseFontSize * 0.75)}px "SF Pro Display", sans-serif`;
-    fCtx.fillStyle = '#86868b';
-    fCtx.fillText(getCurrentDateString(), textStartX, barY + barHeight / 2 + baseFontSize * 0.5);
+    // 日期和分辨率信息（放在品牌名下方）
+    fCtx.font = `400 ${infoFontSize}px -apple-system, "SF Pro Display", sans-serif`;
+    fCtx.fillStyle = '#666666';
+    const infoText = `${getCurrentDateString()} · ${videoWidth}×${videoHeight}`;
+    fCtx.fillText(infoText, textStartX, centerTextY + infoFontSize * 1.2);
     
-    // 中间：视频参数
-    const centerX = framedCanvas.width / 2;
-    fCtx.font = `400 ${Math.floor(baseFontSize * 0.85)}px "SF Pro Display", sans-serif`;
-    fCtx.fillStyle = '#86868b';
-    fCtx.textAlign = 'center';
-    const paramsText = `${videoWidth} × ${videoHeight}`;
-    fCtx.fillText(paramsText, centerX, barY + barHeight / 2);
-    
-    // 右侧：时间戳
+    // 右侧：大时间数字
+    const timeStr = getCurrentTimeString();
+    fCtx.font = `200 ${Math.floor(barHeight * 0.45)}px -apple-system, "SF Pro Display", sans-serif`;
+    fCtx.fillStyle = '#1d1d1f';
     fCtx.textAlign = 'right';
-    fCtx.font = `300 ${baseFontSize}px "SF Pro Display", sans-serif`;
-    fCtx.fillStyle = '#1d1d1f';
-    fCtx.fillText(getCurrentTimeString(), framedCanvas.width - padding, barY + barHeight / 2);
+    fCtx.textBaseline = 'middle';
+    fCtx.fillText(timeStr, framedCanvas.width - padding - frameSize * 0.5, centerTextY);
+    
+    // 重置文本对齐
+    fCtx.textAlign = 'left';
+    fCtx.textBaseline = 'alphabetic';
     
     // 将带边框的画布绘制回原画布
     ctx.canvas.width = framedCanvas.width;
