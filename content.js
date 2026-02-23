@@ -216,43 +216,16 @@ async function drawFrameWatermark(ctx, canvas, videoTime, channel, videoWidth, v
     const barHeight = bottomBarHeight;
     const padding = frameSize * 1.2;
 
-    // 左侧：绘制 SVG Logo（矢量，清晰）
-    const logoSize = Math.floor(barHeight * 0.5);
-    const logoX = padding;
-    const logoY = barY + (barHeight - logoSize) / 2;
-    
-    // 绘制相机图标 Logo（矢量路径）
-    fCtx.save();
-    fCtx.translate(logoX, logoY);
-    fCtx.scale(logoSize / 24, logoSize / 24);
-    
-    // 外圆环
-    fCtx.beginPath();
-    fCtx.arc(12, 12, 10, 0, Math.PI * 2);
-    fCtx.strokeStyle = '#ff3b30';
-    fCtx.lineWidth = 2.5;
-    fCtx.stroke();
-    
-    // 内部快门叶片效果
-    fCtx.fillStyle = '#ff3b30';
-    for (let i = 0; i < 6; i++) {
-        fCtx.beginPath();
-        fCtx.moveTo(12, 12);
-        fCtx.arc(12, 12, 8, (i * 60 - 25) * Math.PI / 180, (i * 60 + 25) * Math.PI / 180);
-        fCtx.closePath();
-        fCtx.fill();
+    // 左侧：绘制 Logo（使用高清原图）
+    const logoImg = await loadLogoImageHD();
+    let logoDrawn = false;
+    if (logoImg) {
+        const logoSize = Math.floor(barHeight * 0.55);
+        const logoX = padding;
+        const logoY = barY + (barHeight - logoSize) / 2;
+        fCtx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
+        logoDrawn = true;
     }
-    
-    // 中心播放按钮
-    fCtx.beginPath();
-    fCtx.moveTo(10, 8);
-    fCtx.lineTo(16, 12);
-    fCtx.lineTo(10, 16);
-    fCtx.closePath();
-    fCtx.fillStyle = '#1d1d1f';
-    fCtx.fill();
-    
-    fCtx.restore();
 
     // 计算字体大小 - 使用更合理的大小
     const channelFontSize = Math.floor(barHeight * 0.22);
@@ -303,8 +276,8 @@ function loadLogoImageHD() {
         img.crossOrigin = 'anonymous';
         img.onload = () => resolve(img);
         img.onerror = () => resolve(null);
-        // 使用 128px 高清图标
-        img.src = chrome.runtime.getURL('icons/icon128.png');
+        // 使用 256px 高清图标
+        img.src = chrome.runtime.getURL('icons/icon256.png');
     });
 }
 
