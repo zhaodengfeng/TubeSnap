@@ -195,84 +195,93 @@ function drawSimpleWatermark(ctx, canvas, timestamp, channel) {
 
 // 外框水印（相框风格 - 类似小米徕卡/vivo蔡司）
 async function drawFrameWatermark(ctx, canvas, videoTime, channel, videoWidth, videoHeight) {
-    const frameSize = Math.floor(Math.min(canvas.width, canvas.height) * 0.06);
-    const bottomBarHeight = Math.floor(frameSize * 2.2);
-    
+    const frameSize = Math.floor(Math.min(canvas.width, canvas.height) * 0.05);
+    const bottomBarHeight = Math.floor(frameSize * 2.0);
+
     // 创建新画布，带边框
     const framedCanvas = document.createElement('canvas');
     framedCanvas.width = canvas.width + frameSize * 2;
     framedCanvas.height = canvas.height + frameSize + bottomBarHeight;
     const fCtx = framedCanvas.getContext('2d');
-    
+
     // 填充白色背景
     fCtx.fillStyle = '#ffffff';
     fCtx.fillRect(0, 0, framedCanvas.width, framedCanvas.height);
-    
+
     // 绘制原图
     fCtx.drawImage(canvas, frameSize, frameSize, canvas.width, canvas.height);
-    
+
     // 底部信息栏
     const barY = canvas.height + frameSize;
     const barHeight = bottomBarHeight;
     const padding = frameSize;
-    
-    // 加载并绘制 Logo（更大更醒目）
-    const logoImg = await loadLogoImage();
+
+    // 加载并绘制 Logo（使用更高清的 128px 图标）
+    const logoImg = await loadLogoImageHD();
     let logoDrawn = false;
     if (logoImg) {
-        const logoSize = Math.floor(barHeight * 0.7);
-        const logoX = padding + frameSize * 0.5;
+        const logoSize = Math.floor(barHeight * 0.6);
+        const logoX = padding;
         const logoY = barY + (barHeight - logoSize) / 2;
         fCtx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
         logoDrawn = true;
     }
-    
+
     // 计算字体大小
-    const brandFontSize = Math.floor(barHeight * 0.28);
-    const infoFontSize = Math.floor(barHeight * 0.18);
-    
-    // Logo 右侧：品牌信息区域
-    const textStartX = padding + (logoDrawn ? barHeight * 0.9 : 0);
+    const brandFontSize = Math.floor(barHeight * 0.30);
+    const infoFontSize = Math.floor(barHeight * 0.16);
+
+    // Logo 右侧：信息区域
+    const textStartX = padding + (logoDrawn ? barHeight * 0.75 : 0);
     const centerTextY = barY + barHeight / 2;
-    
-    // 品牌名（TubeSnap）
+
+    // 第一行：频道名称（使用 channel 参数）
     fCtx.font = `600 ${brandFontSize}px -apple-system, "SF Pro Display", "Segoe UI", sans-serif`;
     fCtx.fillStyle = '#1d1d1f';
     fCtx.textBaseline = 'alphabetic';
-    fCtx.fillText('TubeSnap', textStartX, centerTextY - brandFontSize * 0.1);
-    
-    // 日期和分辨率信息（放在品牌名下方）
+    const displayChannel = channel || 'YouTube';
+    fCtx.fillText(displayChannel, textStartX, centerTextY - brandFontSize * 0.1);
+
+    // 第二行：视频 URL（简化的 youtube.com/watch）
     fCtx.font = `400 ${infoFontSize}px -apple-system, "SF Pro Display", sans-serif`;
     fCtx.fillStyle = '#666666';
-    const infoText = `${getCurrentDateString()} · ${videoWidth}×${videoHeight}`;
-    fCtx.fillText(infoText, textStartX, centerTextY + infoFontSize * 1.2);
-    
-    // 右侧：大时间数字
-    const timeStr = getCurrentTimeString();
-    fCtx.font = `200 ${Math.floor(barHeight * 0.45)}px -apple-system, "SF Pro Display", sans-serif`;
+    // 获取当前页面 URL 并简化显示
+    const currentUrl = window.location.href;
+    let urlDisplay = 'youtube.com';
+    if (currentUrl.includes('youtube.com/watch')) {
+        const videoId = new URLSearchParams(window.location.search).get('v');
+        if (videoId) {
+            urlDisplay = `youtube.com/watch?v=${videoId.substring(0, 8)}...`;
+        }
+    }
+    fCtx.fillText(urlDisplay, textStartX, centerTextY + infoFontSize * 1.3);
+
+    // 右侧：视频当前时间（使用 videoTime 参数）
+    fCtx.font = `300 ${Math.floor(barHeight * 0.40)}px -apple-system, "SF Pro Display", sans-serif`;
     fCtx.fillStyle = '#1d1d1f';
     fCtx.textAlign = 'right';
     fCtx.textBaseline = 'middle';
-    fCtx.fillText(timeStr, framedCanvas.width - padding - frameSize * 0.5, centerTextY);
-    
+    fCtx.fillText(videoTime, framedCanvas.width - padding, centerTextY);
+
     // 重置文本对齐
     fCtx.textAlign = 'left';
     fCtx.textBaseline = 'alphabetic';
-    
+
     // 将带边框的画布绘制回原画布
     ctx.canvas.width = framedCanvas.width;
     ctx.canvas.height = framedCanvas.height;
     ctx.drawImage(framedCanvas, 0, 0);
 }
 
-// 加载 Logo 图片
-function loadLogoImage() {
+// 加载 Logo 图片（高清版）
+function loadLogoImageHD() {
     return new Promise((resolve) => {
         const img = new Image();
         img.crossOrigin = 'anonymous';
         img.onload = () => resolve(img);
         img.onerror = () => resolve(null);
-        img.src = chrome.runtime.getURL('icons/icon48.png');
+        // 使用 128px 高清图标
+        img.src = chrome.runtime.getURL('icons/icon128.png');
     });
 }
 
