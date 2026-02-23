@@ -141,15 +141,27 @@ async function captureScreenshot() {
         case 'save':
             await saveScreenshot(canvas, filename);
             break;
-        case 'copy':
-            await copyScreenshot(canvas);
+        case 'copy': {
+            const copied = await copyScreenshot(canvas);
+            if (!copied) {
+                await saveScreenshot(canvas, filename);
+                showNotification('剪贴板不可用，已自动保存到本地', 'warning');
+            }
             break;
-        case 'both':
-            await Promise.all([
+        }
+        case 'both': {
+            const [saveRes, copyRes] = await Promise.allSettled([
                 saveScreenshot(canvas, filename),
                 copyScreenshot(canvas)
             ]);
+            if (copyRes.status === 'fulfilled' && copyRes.value === false) {
+                showNotification('复制失败，已完成本地保存', 'warning');
+            }
+            if (saveRes.status === 'rejected') {
+                throw saveRes.reason;
+            }
             break;
+        }
         case 'preview':
             showPreview(canvas, filename);
             break;
@@ -225,17 +237,34 @@ async function drawFrameWatermark(ctx, canvas, videoTime, channel, videoWidth, v
     const barHeight = bottomBarHeight;
     const padding = frameSize * 1.5;
 
-    // 左侧：绘制 Logo（使用用户原图高清版本）
-    let logoDrawn = false;
-    const logoSize = Math.floor(barHeight * 0.85);  // 放大到 85% 高度
+    // 左侧：绘制 Logo（带卡片边框，避免“空白感”）
+    const logoSize = Math.floor(barHeight * 0.85);
     const logoX = padding;
     const logoY = barY + (barHeight - logoSize) / 2;
-    
+
+    // 先画一个圆角白底卡片，保证 logo 区域始终可见
+    const cardPad = Math.max(2, Math.floor(frameSize * 0.12));
+    const cardX = logoX - cardPad;
+    const cardY = logoY - cardPad;
+    const cardSize = logoSize + cardPad * 2;
+    const cardRadius = Math.floor(cardSize * 0.22);
+
+    fCtx.save();
+    fCtx.fillStyle = '#ffffff';
+    if (typeof fCtx.roundRect === 'function') {
+        fCtx.beginPath();
+        fCtx.roundRect(cardX, cardY, cardSize, cardSize, cardRadius);
+        fCtx.fill();
+    } else {
+        // 兼容兜底：无 roundRect 时使用普通矩形
+        fCtx.fillRect(cardX, cardY, cardSize, cardSize);
+    }
+    fCtx.restore();
+
     try {
         const logoImg = await loadLogoImageHD();
         if (logoImg) {
             fCtx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
-            logoDrawn = true;
         }
     } catch (e) {
         console.log('Logo 加载失败:', e);
@@ -288,12 +317,25 @@ async function drawFrameWatermark(ctx, canvas, videoTime, channel, videoWidth, v
 // 加载 Logo 图片（高清版）
 function loadLogoImageHD() {
     return new Promise((resolve) => {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = () => resolve(img);
-        img.onerror = () => resolve(null);
-        // 使用 1024px 超高清图标
-        img.src = chrome.runtime.getURL('icons/icon1024.png');
+        const candidates = ['icons/icon1024.png', 'icons/icon128.png', 'icons/toolbar128.png'];
+        let idx = 0;
+
+        const tryNext = () => {
+            if (idx >= candidates.length) {
+                resolve(null);
+                return;
+            }
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => resolve(img);
+            img.onerror = () => {
+                idx += 1;
+                tryNext();
+            };
+            img.src = chrome.runtime.getURL(candidates[idx]);
+        };
+
+        tryNext();
     });
 }
 
@@ -341,8 +383,13 @@ async function copyScreenshot(canvas) {
                 reject(new Error('生成图片失败'));
                 return;
             }
-            
-            try {
+
+            if (!navigator.clipboard || !window.ClipboardItem) {
+                resolve(false);
+                return;
+            }
+
+            const writeClipboard = async () => {
                 if (CONFIG.screenshotFormat === 'png') {
                     await navigator.clipboard.write([
                         new ClipboardItem({ 'image/png': blob })
@@ -353,11 +400,23 @@ async function copyScreenshot(canvas) {
                         new ClipboardItem({ 'image/png': pngBlob })
                     ]);
                 }
+            };
+
+            try {
+                await writeClipboard();
                 showNotification('已复制到剪贴板', 'success');
-                resolve();
+                resolve(true);
             } catch (err) {
-                showNotification('复制失败: ' + err.message, 'error');
-                reject(err);
+                // popup 关闭后的焦点切换可能有延迟，重试一次
+                try {
+                    await new Promise(r => setTimeout(r, 180));
+                    await writeClipboard();
+                    showNotification('已复制到剪贴板', 'success');
+                    resolve(true);
+                } catch (err2) {
+                    console.warn('复制失败:', err2);
+                    resolve(false);
+                }
             }
         }, 'image/png');
     });
@@ -373,7 +432,7 @@ function canvasToPngBlob(canvas) {
 function createScreenshotButton() {
     const btn = document.createElement('button');
     btn.className = 'tubesnap-btn ytp-button';
-    btn.title = '截图 (Alt+S)';
+    btn.title = '截图';
     btn.setAttribute('aria-label', '截图');
 
     // 改为位图图标，避免 YouTube 对内联 SVG 的样式覆盖导致“图标不显示”
@@ -432,25 +491,49 @@ function addButtonsToPlayer() {
 
 // ===== 特效与反馈 =====
 function showFlashEffect() {
+    const video = getVideoElement();
+    const rect = video?.getBoundingClientRect?.();
+
     const flash = document.createElement('div');
     flash.className = 'tubesnap-flash';
-    flash.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        background: white;
-        opacity: 0.3;
-        pointer-events: none;
-        z-index: 999999;
-        transition: opacity 0.3s ease-out;
-    `;
+
+    if (rect && rect.width > 0 && rect.height > 0) {
+        flash.style.cssText = `
+            position: fixed;
+            left: ${Math.max(0, rect.left)}px;
+            top: ${Math.max(0, rect.top)}px;
+            width: ${rect.width}px;
+            height: ${rect.height}px;
+            border-radius: 10px;
+            box-shadow: inset 0 0 0 2px rgba(255,255,255,0.85), 0 0 0 1px rgba(0,0,0,0.18);
+            background: radial-gradient(circle at center, rgba(255,255,255,0.22), rgba(255,255,255,0.05) 60%, rgba(255,255,255,0));
+            opacity: 0;
+            transform: scale(1.01);
+            pointer-events: none;
+            z-index: 999999;
+            transition: opacity 120ms ease-out, transform 180ms ease-out;
+        `;
+    } else {
+        flash.style.cssText = `
+            position: fixed;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.16);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 999999;
+            transition: opacity 120ms ease-out;
+        `;
+    }
+
     document.body.appendChild(flash);
-    
+
     requestAnimationFrame(() => {
-        flash.style.opacity = '0';
-        setTimeout(() => flash.remove(), 300);
+        flash.style.opacity = '1';
+        flash.style.transform = 'scale(1)';
+        setTimeout(() => {
+            flash.style.opacity = '0';
+            setTimeout(() => flash.remove(), 180);
+        }, 80);
     });
 }
 
@@ -552,22 +635,6 @@ function showPreview(canvas, filename) {
     }, 'image/png');
 }
 
-// ===== 键盘快捷键 =====
-function handleKeyDown(e) {
-    if (document.activeElement && (
-        document.activeElement.contentEditable === 'true' ||
-        document.activeElement.tagName === 'INPUT' ||
-        document.activeElement.tagName === 'TEXTAREA'
-    )) {
-        return;
-    }
-    
-    if (e.altKey && (e.key === 's' || e.key === 'S')) {
-        e.preventDefault();
-        captureScreenshot();
-    }
-}
-
 // ===== DOM 观察器 =====
 const observer = new MutationObserver(() => {
     if (!isAppended) {
@@ -596,8 +663,6 @@ function init() {
             }
         }
     });
-    
-    document.addEventListener('keydown', handleKeyDown);
     
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         if (request.action === 'take-screenshot') {

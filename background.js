@@ -38,28 +38,53 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         });
         return true; // 保持消息通道开放以进行异步响应
     }
+
+    // popup 触发截图：等待 popup 关闭后再发消息，提升 clipboard 成功率
+    if (request.action === 'take-screenshot-from-popup') {
+        const tabId = request.tabId;
+
+        const sendCapture = () => new Promise((resolve) => {
+            chrome.tabs.sendMessage(tabId, { action: 'take-screenshot' }, (resp) => {
+                const err = chrome.runtime.lastError;
+                if (err) {
+                    resolve({ ok: false, error: err.message });
+                    return;
+                }
+                resolve({ ok: true, resp });
+            });
+        });
+
+        (async () => {
+            await new Promise(r => setTimeout(r, 220));
+
+            let result = await sendCapture();
+            if (!result.ok && /Receiving end does not exist/i.test(result.error || '')) {
+                // content script 可能尚未注入（例如刚更新扩展后未刷新页面）
+                try {
+                    await chrome.scripting.insertCSS({ target: { tabId }, files: ['content.css'] });
+                } catch (_) {}
+                try {
+                    await chrome.scripting.executeScript({ target: { tabId }, files: ['content.js'] });
+                } catch (e) {
+                    sendResponse({ success: false, error: e?.message || result.error || 'Injection failed' });
+                    return;
+                }
+
+                await new Promise(r => setTimeout(r, 80));
+                result = await sendCapture();
+            }
+
+            if (!result.ok) {
+                sendResponse({ success: false, error: result.error || 'Unknown error' });
+                return;
+            }
+            sendResponse({ success: true });
+        })();
+
+        return true;
+    }
     
     return false;
-});
-
-// ===== 快捷键命令处理 =====
-chrome.commands.onCommand.addListener((command) => {
-    if (command === 'take-screenshot') {
-        // 获取当前活动标签页
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-            if (tabs[0] && tabs[0].url && tabs[0].url.includes('youtube.com')) {
-                chrome.tabs.sendMessage(tabs[0].id, { action: 'take-screenshot' });
-            }
-        });
-    }
-});
-
-// ===== 标签页更新监听 =====
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-    // 当 YouTube 页面加载完成时，可以在这里执行一些初始化逻辑
-    if (changeInfo.status === 'complete' && tab.url && tab.url.includes('youtube.com')) {
-        // 可以在这里发送消息给 content script 进行初始化检查
-    }
 });
 
 console.log('TubeSnap background script loaded');

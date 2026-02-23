@@ -15,6 +15,7 @@ TubeSnap runs only on YouTube domains:
 - `https://www.youtube.com/*`
 - `https://youtube.com/*`
 - `https://m.youtube.com/*`
+- `https://youtu.be/*`
 
 It accesses the current page only to:
 
@@ -28,6 +29,7 @@ It accesses the current page only to:
 - `downloads`: save screenshots to local device
 - `clipboardWrite`: copy screenshots to clipboard when user selects copy mode
 - `activeTab`: operate on the currently active YouTube tab
+- `scripting`: inject extension scripts into a YouTube tab only when needed (for example, recovering functionality after extension update)
 
 ## Data transfer
 

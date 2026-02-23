@@ -2,13 +2,13 @@
 
 Minimal Chrome extension for taking clean screenshots from YouTube videos.
 
-![Version](https://img.shields.io/badge/version-1.2.8-blue)
+![Version](https://img.shields.io/badge/version-1.3.5-blue)
 ![License](https://img.shields.io/badge/license-GPL--3.0-green)
 
 ## Features
 
 - One-click screenshot button in the YouTube control bar
-- Keyboard shortcut: `Alt + S` (macOS: `Command + Shift + S`)
+- Capture from the player button (bottom-right in YouTube controls)
 - Save, copy to clipboard, or preview before saving
 - Optional timestamp watermark
 - PNG / JPEG / WebP output formats
@@ -25,12 +25,12 @@ Minimal Chrome extension for taking clean screenshots from YouTube videos.
 ## Usage
 
 - Open any YouTube video
-- Click the TubeSnap button in the player controls
-- Or press `Alt + S`
+- Click the TubeSnap button in the player controls (bottom-right)
+- Configure all settings in the extension popup
 
 ## Privacy
 
-- Runs only on `youtube.com`
+- Runs only on YouTube domains (`youtube.com`, `m.youtube.com`, `youtu.be`)
 - No user data collection
 - No remote upload
 - All processing happens locally in the browser
