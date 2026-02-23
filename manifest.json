@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "TubeSnap",
-    "version": "1.2.7",
+    "version": "1.2.8",
     "description": "One-click YouTube screenshot extension with save, copy, preview, and watermark support.",
     "icons": {
         "16": "icons/icon16.png",
@@ -53,14 +53,13 @@
                 "default": "Alt+S",
                 "mac": "Command+Shift+S"
             },
-            "description": "快速截图"
+            "description": "Take a screenshot"
         }
     },
     "web_accessible_resources": [
         {
             "resources": [
-                "icons/*",
-                "sounds/*"
+                "icons/*"
             ],
             "matches": [
                 "https://www.youtube.com/*",
