@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "TubeSnap",
-    "version": "1.0.6",
+    "version": "1.0.7",
     "description": "一键截取 YouTube 视频画面，支持保存、复制、预览和水印功能",
     "icons": {
         "16": "icons/icon16.png",
