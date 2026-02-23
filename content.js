@@ -201,13 +201,17 @@ function drawSimpleWatermark(ctx, canvas, timestamp, channel) {
 // 外框水印（相框风格 - 类似小米徕卡/vivo蔡司）
 async function drawFrameWatermark(ctx, canvas, videoTime, channel, videoWidth, videoHeight) {
     const frameSize = Math.floor(Math.min(canvas.width, canvas.height) * 0.04);
-    const bottomBarHeight = Math.floor(frameSize * 2.5);
+    const bottomBarHeight = Math.floor(frameSize * 2.2);
 
     // 创建新画布，带边框
     const framedCanvas = document.createElement('canvas');
     framedCanvas.width = canvas.width + frameSize * 2;
     framedCanvas.height = canvas.height + frameSize + bottomBarHeight;
     const fCtx = framedCanvas.getContext('2d');
+    
+    // 启用高清渲染
+    fCtx.imageSmoothingEnabled = true;
+    fCtx.imageSmoothingQuality = 'high';
 
     // 填充白色背景
     fCtx.fillStyle = '#ffffff';
@@ -219,59 +223,91 @@ async function drawFrameWatermark(ctx, canvas, videoTime, channel, videoWidth, v
     // 底部信息栏
     const barY = canvas.height + frameSize;
     const barHeight = bottomBarHeight;
-    const padding = frameSize * 1.2;
+    const padding = frameSize * 1.5;
 
-    // 左侧：绘制 Logo（使用高清原图）
-    let logoDrawn = false;
-    let logoX = padding;
-    let logoSize = Math.floor(barHeight * 0.55);
+    // 左侧：使用 SVG 矢量绘制 Logo（清晰，不依赖图片加载）
+    const logoSize = Math.floor(barHeight * 0.6);
+    const logoX = padding;
+    const logoY = barY + (barHeight - logoSize) / 2;
     
-    try {
-        const logoImg = await loadLogoImageHD();
-        if (logoImg) {
-            const logoY = barY + (barHeight - logoSize) / 2;
-            fCtx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
-            logoDrawn = true;
-        }
-    } catch (e) {
-        console.log('Logo 加载失败:', e);
+    // 保存上下文并绘制矢量 Logo
+    fCtx.save();
+    fCtx.translate(logoX, logoY);
+    fCtx.scale(logoSize / 100, logoSize / 100);
+    
+    // 绘制相机快门形状（类似原 Logo）
+    // 外圆
+    fCtx.beginPath();
+    fCtx.arc(50, 50, 45, 0, Math.PI * 2);
+    fCtx.strokeStyle = '#ff3b30';
+    fCtx.lineWidth = 8;
+    fCtx.stroke();
+    
+    // 6个快门叶片
+    for (let i = 0; i < 6; i++) {
+        const angle = (i * 60 - 30) * Math.PI / 180;
+        fCtx.beginPath();
+        fCtx.moveTo(50, 50);
+        fCtx.arc(50, 50, 38, angle, angle + 50 * Math.PI / 180);
+        fCtx.closePath();
+        fCtx.fillStyle = (i % 2 === 0) ? '#ff3b30' : '#333333';
+        fCtx.fill();
     }
+    
+    // 中心白色圆
+    fCtx.beginPath();
+    fCtx.arc(50, 50, 15, 0, Math.PI * 2);
+    fCtx.fillStyle = '#ffffff';
+    fCtx.fill();
+    
+    // 中心播放三角形
+    fCtx.beginPath();
+    fCtx.moveTo(46, 43);
+    fCtx.lineTo(58, 50);
+    fCtx.lineTo(46, 57);
+    fCtx.closePath();
+    fCtx.fillStyle = '#333333';
+    fCtx.fill();
+    
+    fCtx.restore();
 
-    // 计算字体大小 - 使用更合理的大小
-    const channelFontSize = Math.floor(barHeight * 0.22);
-    const urlFontSize = Math.floor(barHeight * 0.14);
-    const timeFontSize = Math.floor(barHeight * 0.35);
+    // 计算字体大小
+    const channelFontSize = Math.floor(barHeight * 0.28);
+    const urlFontSize = Math.floor(barHeight * 0.16);
+    const timeFontSize = Math.floor(barHeight * 0.40);
 
     // Logo 右侧：信息区域
-    const textStartX = logoDrawn ? (logoX + logoSize + frameSize * 0.8) : padding;
+    const textStartX = logoX + logoSize + frameSize;
+    
+    // 启用文字抗锯齿
+    fCtx.textRendering = 'optimizeLegibility';
     
     // 第一行：频道名称
-    fCtx.font = `600 ${channelFontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+    fCtx.font = `600 ${channelFontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`;
     fCtx.fillStyle = '#1d1d1f';
-    fCtx.textBaseline = 'alphabetic';
+    fCtx.textBaseline = 'middle';
     const displayChannel = channel || 'YouTube';
-    fCtx.fillText(displayChannel, textStartX, barY + barHeight * 0.45);
+    fCtx.fillText(displayChannel, textStartX, barY + barHeight * 0.35);
 
-    // 第二行：完整视频 URL（缩小字体以完整显示）
-    fCtx.font = `400 ${urlFontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace`;
+    // 第二行：视频 URL
+    fCtx.font = `400 ${urlFontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`;
     fCtx.fillStyle = '#666666';
     const currentUrl = window.location.href;
     let urlDisplay = 'youtube.com';
     if (currentUrl.includes('youtube.com/watch')) {
-        urlDisplay = currentUrl;
+        const urlObj = new URL(currentUrl);
+        urlDisplay = 'youtube.com/watch?v=' + urlObj.searchParams.get('v');
     }
-    fCtx.fillText(urlDisplay, textStartX, barY + barHeight * 0.72);
+    fCtx.fillText(urlDisplay, textStartX, barY + barHeight * 0.65);
 
-    // 右侧：视频当前时间（大字体）
-    fCtx.font = `300 ${timeFontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+    // 右侧：视频当前时间
+    fCtx.font = `200 ${timeFontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`;
     fCtx.fillStyle = '#1d1d1f';
     fCtx.textAlign = 'right';
-    fCtx.textBaseline = 'middle';
     fCtx.fillText(videoTime, framedCanvas.width - padding, barY + barHeight / 2);
 
     // 重置文本对齐
     fCtx.textAlign = 'left';
-    fCtx.textBaseline = 'alphabetic';
 
     // 将带边框的画布绘制回原画布
     ctx.canvas.width = framedCanvas.width;
