@@ -1,0 +1,148 @@
+/**
+ * TubeSnap - Content Styles
+ */
+
+/* 截图按钮 */
+.tubesnap-btn {
+    width: 40px !important;
+    height: 40px !important;
+    padding: 8px !important;
+    margin: 0 4px !important;
+    border: none !important;
+    background: transparent !important;
+    color: #eee !important;
+    cursor: pointer !important;
+    opacity: 0.9 !important;
+    transition: all 0.2s ease !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 50% !important;
+}
+
+.tubesnap-btn:hover {
+    opacity: 1 !important;
+    background: rgba(255, 255, 255, 0.15) !important;
+    transform: scale(1.1) !important;
+}
+
+.tubesnap-btn:active {
+    transform: scale(0.95) !important;
+}
+
+.tubesnap-btn svg {
+    width: 22px !important;
+    height: 22px !important;
+    fill: currentColor !important;
+    pointer-events: none !important;
+}
+
+/* 暗黑模式适配 */
+html[dark] .tubesnap-btn {
+    color: #eee !important;
+}
+
+/* 闪光效果 */
+.tubesnap-flash {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: white;
+    opacity: 0.3;
+    pointer-events: none;
+    z-index: 999999;
+    transition: opacity 0.3s ease-out;
+}
+
+/* 通知样式 */
+.tubesnap-notify {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 10000;
+    animation: tubesnap-slide-in 0.3s ease-out;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    max-width: 300px;
+    word-break: break-word;
+}
+
+.tubesnap-notify-success {
+    background: rgba(76, 175, 80, 0.95) !important;
+    color: white !important;
+}
+
+.tubesnap-notify-error {
+    background: rgba(244, 67, 54, 0.95) !important;
+    color: white !important;
+}
+
+.tubesnap-notify-warning {
+    background: rgba(255, 152, 0, 0.95) !important;
+    color: white !important;
+}
+
+.tubesnap-notify-info {
+    background: rgba(33, 150, 243, 0.95) !important;
+    color: white !important;
+}
+
+/* 动画 */
+@keyframes tubesnap-slide-in {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes tubesnap-slide-out {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+    .tubesnap-btn {
+        width: 36px !important;
+        height: 36px !important;
+        padding: 6px !important;
+    }
+    
+    .tubesnap-btn svg {
+        width: 20px !important;
+        height: 20px !important;
+    }
+}
+
+/* 全屏模式适配 */
+.ytp-fullscreen .tubesnap-btn {
+    z-index: 1000 !important;
+}
+
+/* 剧场模式适配 */
+.ytp-big-mode .tubesnap-btn {
+    width: 48px !important;
+    height: 48px !important;
+}
+
+.ytp-big-mode .tubesnap-btn svg {
+    width: 26px !important;
+    height: 26px !important;
+}
