@@ -247,7 +247,7 @@ async function drawFrameWatermark(ctx, canvas, videoTime, channel, videoWidth, v
     const timeFontSize = Math.floor(barHeight * 0.40);
 
     // Logo 右侧：信息区域
-    const textStartX = logoX + logoSize + frameSize;
+    const textStartX = logoX + logoSize + Math.floor(frameSize * 0.3);  // 缩小间距，更靠近 logo
     
     // 启用文字抗锯齿
     fCtx.textRendering = 'optimizeLegibility';
