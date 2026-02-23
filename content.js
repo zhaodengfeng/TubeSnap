@@ -226,7 +226,7 @@ async function drawFrameWatermark(ctx, canvas, videoTime, channel, videoWidth, v
     const padding = frameSize * 1.5;
 
     // 左侧：使用 SVG 矢量绘制 Logo（清晰，不依赖图片加载）
-    const logoSize = Math.floor(barHeight * 0.6);
+    const logoSize = Math.floor(barHeight * 0.75);  // 从 0.6 增大到 0.75
     const logoX = padding;
     const logoY = barY + (barHeight - logoSize) / 2;
     
