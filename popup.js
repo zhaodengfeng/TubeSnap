@@ -32,10 +32,7 @@ async function checkCurrentTab() {
         if (!isYouTube) {
             screenshotBtn.disabled = true;
             screenshotBtn.style.opacity = '0.4';
-            screenshotBtn.innerHTML = `
-                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/><path d="M12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/><path d="M20 6h-2.5l-1.5-2h-7L7.5 6H5c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h15c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-8 13c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"/></svg>
-                请前往 YouTube 使用
-            `;
+            screenshotBtn.textContent = '请前往 YouTube 使用';
             return false;
         }
         return true;
