@@ -225,51 +225,21 @@ async function drawFrameWatermark(ctx, canvas, videoTime, channel, videoWidth, v
     const barHeight = bottomBarHeight;
     const padding = frameSize * 1.5;
 
-    // 左侧：使用 SVG 矢量绘制 Logo（清晰，不依赖图片加载）
-    const logoSize = Math.floor(barHeight * 0.75);  // 从 0.6 增大到 0.75
+    // 左侧：绘制 Logo（使用用户原图高清版本）
+    let logoDrawn = false;
+    const logoSize = Math.floor(barHeight * 0.85);  // 放大到 85% 高度
     const logoX = padding;
     const logoY = barY + (barHeight - logoSize) / 2;
     
-    // 保存上下文并绘制矢量 Logo
-    fCtx.save();
-    fCtx.translate(logoX, logoY);
-    fCtx.scale(logoSize / 100, logoSize / 100);
-    
-    // 绘制相机快门形状（类似原 Logo）
-    // 外圆
-    fCtx.beginPath();
-    fCtx.arc(50, 50, 45, 0, Math.PI * 2);
-    fCtx.strokeStyle = '#ff3b30';
-    fCtx.lineWidth = 8;
-    fCtx.stroke();
-    
-    // 6个快门叶片
-    for (let i = 0; i < 6; i++) {
-        const angle = (i * 60 - 30) * Math.PI / 180;
-        fCtx.beginPath();
-        fCtx.moveTo(50, 50);
-        fCtx.arc(50, 50, 38, angle, angle + 50 * Math.PI / 180);
-        fCtx.closePath();
-        fCtx.fillStyle = (i % 2 === 0) ? '#ff3b30' : '#333333';
-        fCtx.fill();
+    try {
+        const logoImg = await loadLogoImageHD();
+        if (logoImg) {
+            fCtx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
+            logoDrawn = true;
+        }
+    } catch (e) {
+        console.log('Logo 加载失败:', e);
     }
-    
-    // 中心白色圆
-    fCtx.beginPath();
-    fCtx.arc(50, 50, 15, 0, Math.PI * 2);
-    fCtx.fillStyle = '#ffffff';
-    fCtx.fill();
-    
-    // 中心播放三角形
-    fCtx.beginPath();
-    fCtx.moveTo(46, 43);
-    fCtx.lineTo(58, 50);
-    fCtx.lineTo(46, 57);
-    fCtx.closePath();
-    fCtx.fillStyle = '#333333';
-    fCtx.fill();
-    
-    fCtx.restore();
 
     // 计算字体大小
     const channelFontSize = Math.floor(barHeight * 0.28);
@@ -322,8 +292,8 @@ function loadLogoImageHD() {
         img.crossOrigin = 'anonymous';
         img.onload = () => resolve(img);
         img.onerror = () => resolve(null);
-        // 使用 256px 高清图标
-        img.src = chrome.runtime.getURL('icons/icon256.png');
+        // 使用 1024px 超高清图标
+        img.src = chrome.runtime.getURL('icons/icon1024.png');
     });
 }
 
