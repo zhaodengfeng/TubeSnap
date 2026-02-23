@@ -31,10 +31,11 @@
 }
 
 .tubesnap-btn svg {
-    width: 26px !important;
-    height: 26px !important;
+    width: 28px !important;
+    height: 28px !important;
     fill: currentColor !important;
     pointer-events: none !important;
+    display: block !important;
 }
 
 /* 暗黑模式适配 */
