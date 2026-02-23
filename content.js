@@ -219,9 +219,9 @@ async function drawFrameWatermark(ctx, canvas, videoTime, channel, videoWidth, v
     // 左侧：绘制 Logo（使用高清原图）
     const logoImg = await loadLogoImageHD();
     let logoDrawn = false;
+    let logoX = padding;
+    let logoSize = Math.floor(barHeight * 0.55);
     if (logoImg) {
-        const logoSize = Math.floor(barHeight * 0.55);
-        const logoX = padding;
         const logoY = barY + (barHeight - logoSize) / 2;
         fCtx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
         logoDrawn = true;
@@ -233,7 +233,7 @@ async function drawFrameWatermark(ctx, canvas, videoTime, channel, videoWidth, v
     const timeFontSize = Math.floor(barHeight * 0.35);
 
     // Logo 右侧：信息区域
-    const textStartX = logoX + logoSize + frameSize * 0.8;
+    const textStartX = logoDrawn ? (logoX + logoSize + frameSize * 0.8) : padding;
     
     // 第一行：频道名称
     fCtx.font = `600 ${channelFontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
@@ -368,10 +368,15 @@ function createScreenshotButton() {
         </svg>
     `;
     
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', async (e) => {
         e.preventDefault();
         e.stopPropagation();
-        captureScreenshot();
+        try {
+            await captureScreenshot();
+        } catch (err) {
+            console.error('截图失败:', err);
+            showNotification('截图失败: ' + err.message, 'error');
+        }
     });
     
     return btn;
