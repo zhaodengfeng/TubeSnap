@@ -120,7 +120,7 @@ async function captureScreenshot() {
     
     if (CONFIG.enableWatermark) {
         if (CONFIG.watermarkStyle === 'frame') {
-            drawFrameWatermark(ctx, canvas, timestamp, getChannelName(), video.videoWidth, video.videoHeight);
+            await drawFrameWatermark(ctx, canvas, timestamp, getChannelName(), video.videoWidth, video.videoHeight);
         } else {
             drawSimpleWatermark(ctx, canvas, timestamp, getChannelName());
         }
@@ -194,9 +194,9 @@ function drawSimpleWatermark(ctx, canvas, timestamp, channel) {
 }
 
 // 外框水印（相框风格 - 类似小米徕卡/vivo蔡司）
-function drawFrameWatermark(ctx, canvas, videoTime, channel, videoWidth, videoHeight) {
+async function drawFrameWatermark(ctx, canvas, videoTime, channel, videoWidth, videoHeight) {
     const frameSize = Math.floor(Math.min(canvas.width, canvas.height) * 0.08);
-    const bottomBarHeight = Math.floor(frameSize * 1.5);
+    const bottomBarHeight = Math.floor(frameSize * 1.8);
     
     // 创建新画布，带边框
     const framedCanvas = document.createElement('canvas');
@@ -214,27 +214,31 @@ function drawFrameWatermark(ctx, canvas, videoTime, channel, videoWidth, videoHe
     // 底部信息栏
     const barY = canvas.height + frameSize;
     const barHeight = bottomBarHeight;
-    const padding = frameSize * 0.5;
+    const padding = frameSize * 0.6;
+    
+    // 加载并绘制 Logo
+    const logoImg = await loadLogoImage();
+    if (logoImg) {
+        const logoSize = Math.floor(barHeight * 0.5);
+        fCtx.drawImage(logoImg, padding, barY + (barHeight - logoSize) / 2, logoSize, logoSize);
+    }
     
     // 计算字体大小
-    const baseFontSize = Math.floor(barHeight * 0.28);
+    const baseFontSize = Math.floor(barHeight * 0.22);
     
-    // 左侧：品牌 Logo 区域（模拟徕卡红点）
-    fCtx.fillStyle = '#ff3b30';
-    fCtx.beginPath();
-    fCtx.arc(padding + barHeight * 0.35, barY + barHeight / 2, barHeight * 0.12, 0, Math.PI * 2);
-    fCtx.fill();
+    // Logo 右侧：品牌名和日期
+    const textStartX = padding + (logoImg ? barHeight * 0.6 : 0);
     
     // 品牌名
     fCtx.font = `500 ${baseFontSize}px "SF Pro Display", -apple-system, "Segoe UI", sans-serif`;
     fCtx.fillStyle = '#1d1d1f';
     fCtx.textBaseline = 'middle';
-    fCtx.fillText('TubeSnap', padding + barHeight * 0.6, barY + barHeight / 2 - baseFontSize * 0.2);
+    fCtx.fillText('TubeSnap', textStartX, barY + barHeight / 2 - baseFontSize * 0.2);
     
     // 日期
     fCtx.font = `300 ${Math.floor(baseFontSize * 0.75)}px "SF Pro Display", sans-serif`;
     fCtx.fillStyle = '#86868b';
-    fCtx.fillText(getCurrentDateString(), padding + barHeight * 0.6, barY + barHeight / 2 + baseFontSize * 0.5);
+    fCtx.fillText(getCurrentDateString(), textStartX, barY + barHeight / 2 + baseFontSize * 0.5);
     
     // 中间：视频参数
     const centerX = framedCanvas.width / 2;
@@ -254,6 +258,17 @@ function drawFrameWatermark(ctx, canvas, videoTime, channel, videoWidth, videoHe
     ctx.canvas.width = framedCanvas.width;
     ctx.canvas.height = framedCanvas.height;
     ctx.drawImage(framedCanvas, 0, 0);
+}
+
+// 加载 Logo 图片
+function loadLogoImage() {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
+        img.src = chrome.runtime.getURL('icons/icon48.png');
+    });
 }
 
 async function saveScreenshot(canvas, filename) {
