@@ -2,7 +2,7 @@
 
 Minimal Chrome extension for taking clean screenshots from YouTube videos.
 
-![Version](https://img.shields.io/badge/version-1.2.7-blue)
+![Version](https://img.shields.io/badge/version-1.2.8-blue)
 ![License](https://img.shields.io/badge/license-GPL--3.0-green)
 
 ## Features
