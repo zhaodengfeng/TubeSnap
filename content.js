@@ -375,15 +375,27 @@ function createScreenshotButton() {
     btn.className = 'tubesnap-btn ytp-button';
     btn.title = '截图 (Alt+S)';
     btn.setAttribute('aria-label', '截图');
-    
-    // 使用简单的相机图标 - 可靠的 SVG 路径
-    btn.innerHTML = `
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="12" cy="12" r="3" fill="currentColor"/>
-            <path fill="currentColor" d="M20 6h-2.5l-1.5-2h-7L7.5 6H5c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h15c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H5V8h15v10z"/>
-        </svg>
-    `;
-    
+
+    // 改为位图图标，避免 YouTube 对内联 SVG 的样式覆盖导致“图标不显示”
+    const icon = document.createElement('img');
+    icon.className = 'tubesnap-btn-icon';
+    icon.alt = '';
+    icon.src = chrome.runtime.getURL('icons/toolbar48.png');
+    icon.draggable = false;
+    icon.decoding = 'async';
+
+    // 加载失败兜底：退回纯 SVG 相机图标
+    icon.onerror = () => {
+        btn.innerHTML = `
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="12" r="3" fill="currentColor"/>
+                <path fill="currentColor" d="M20 6h-2.5l-1.5-2h-7L7.5 6H5c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h15c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H5V8h15v10z"/>
+            </svg>
+        `;
+    };
+
+    btn.appendChild(icon);
+
     btn.addEventListener('click', async (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -394,7 +406,7 @@ function createScreenshotButton() {
             showNotification('截图失败: ' + err.message, 'error');
         }
     });
-    
+
     return btn;
 }
 
